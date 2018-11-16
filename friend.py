@@ -98,9 +98,8 @@ def book_sim(i,j):
 S = []
 n = 1867
 total_tags = 53388
-A = []
-alpha = 0.15
-beta = 0.15
+alpha = 0.1
+beta = 0.1
 
 def tag_similarity(key1,key2):
 	#calculate mean_vu and mean_vm
@@ -200,7 +199,10 @@ g_stf_denom = 0
 g_seren_denom = 0
 g_novel_denom = 0
 
+
+
 def friend_reccomder(key1):
+	A=[]
 	counter = 0
 	tr = 0
 	tp = 0
