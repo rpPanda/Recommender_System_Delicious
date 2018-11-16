@@ -25,24 +25,6 @@ class User():
 
 users = {}
 
-def biclustering(matrix):
-	model = SpectralBiclustering()
-	model.fit(matrix)
-	fit_data = data[np.argsort(model.row_labels_)]
-	fit_data = fit_data[:, np.argsort(model.column_labels_)]
-	return fit_data
-# df = pd.read_csv('dataset/user_taggedbookmarks.dat', 
-#                  sep='\t', 
-#                  usecols=[2])
-# print(df)
-
-# db=DBSCAN(eps=0.01, min_samples=1).fit(df)
-
-# labels = db.labels_
-# print(labels)
-# n_clusters_ = len(set(labels)) - (1 if -1 in labels else 0)
-
-# print('Estimated number of clusters: %d' % n_clusters_)
 
 def read_data():
 	for line in open('dataset/user_taggedbookmarks.dat'):
@@ -87,6 +69,17 @@ def read_bookmarks():
 read_bookmarks()
 print('Bookmarks Read')
 
+
+def biclustering(matrix):
+	model = SpectralBiclustering()
+	model.fit(matrix)
+	fit_data = data[np.argsort(model.row_labels_)]
+	fit_data = fit_data[:, np.argsort(model.column_labels_)]
+	return fit_data
+
+
+
+
 #Getting similarity between 2 bookmarks
 def book_sim(i,j):
 	if(i in bookmarks and j in bookmarks):
@@ -106,10 +99,10 @@ S = []
 n = 1867
 total_tags = 53388
 A = []
-alpha = 0.1
-beta = 0.1
+alpha = 0.15
+beta = 0.15
 
-def ts(key1,key2):
+def tag_similarity(key1,key2):
 	#calculate mean_vu and mean_vm
 	vu_mean = vm_mean = 0
 	for key in users[key1].tags:
@@ -142,7 +135,7 @@ def ts(key1,key2):
 # db1=DBSCAN(eps=2, min_samples=4).fit_predict(X)
 
 
-def ui(key1,key2):
+def user_interaction(key1,key2):
 	numerator = 0
 	den = len(users[key1].bookmarks)
 	for key in users[key1].bookmarks:
@@ -230,9 +223,9 @@ def friend_reccomder(key1):
 		for key2 in users:
 			if(key1 != key2):
 				m = users[key2]
-				#sim = ts(key1,key2)
-				user_interest1 = ui(key1,key2)
-				user_interest2 = ui(key2,key1)
+				#sim = tag_similarity(key1,key2)
+				user_interest1 = user_interaction(key1,key2)
+				user_interest2 = user_interaction(key2,key1)
 				#print(sim)
 				if(user_interest1 > beta or user_interest2 > beta):
 					#this friend is recommended to user (key1)
@@ -283,8 +276,8 @@ def bookmark_reccomder(key1):
 	
 	return C
 	
-A = friend_reccomder('1')
-C=bookmark_reccomder('8')
+#A = friend_reccomder('1')
+#C=bookmark_reccomder('8')
 def ans_in_str(C):
 	D=""
 	for i in range(0,len(C)):
@@ -297,7 +290,7 @@ def ans_in_str(C):
 			if(bid == C[i]):
 				D=D+burl;
 	return D	
-print(A)
+#print(A)
 def frs_in_str(C):
 	D=""
 	for i in range(0,len(C)):
@@ -306,22 +299,91 @@ def frs_in_str(C):
 		D=D+str(C[i])+'\n'
 	return D
 
-# print(frs_in_str(A))
+def frs():
+	counter = 0
+	tr = 0
+	tp = 0
+	satisfied = 0
+	satisfied_denom = 0
+	novel = 0
+	serendipitous = 0
+	seren_denom = 0
+	novel_denom = 0
+	for key1 in users:
+		counter += 1
+		print(''+str(counter)+'/'+str(total_usrs))
+		u = users[key1]
+		flag = 0
+		recom = 0
+		for key2 in users:
+			if(key1 != key2):
+				m = users[key2]
+				#sim = tag_similarity(key1,key2)
+				user_interest1 = user_interaction(key1,key2)
+				user_interest2 = user_interaction(key2,key1)
+				#print(sim)
+				if(user_interest1 > beta or user_interest2 > beta):
+					#this friend is recommended to user (key1)
+					S.append((key1,key2))
 
-#print(C)
+					tr += 1		#total recommendations
+					recom = 1	#current friend is recommended
+					#print("tr %s"%(tr))
+					#To check if it is a positive contact 
+					if( ( (key1,key2) in contacts ) or ( (key2,key1) in contacts)):
+						tp += 1
+						flag = 1
+
+					#To check if recommended bookmarks are serendipitous 
+					for i in users[key2].bookmarks:
+						check = 1
+						for j in users[key1].bookmarks:
+							sim = book_sim(i,j)
+							if(sim>0.5):
+								check = 0
+								break
+						
+					#To check if recommended bookmarks are novel
+					for b in users[key2].bookmarks:
+						if(not b in users[key1].bookmarks):
+							novel += 1
+						novel_denom += 1
+		if(recom == 1):
+			satisfied_denom += 1
+		if(flag == 1 and recom == 1):
+			satisfied += 1
+
+
+	global g_stf_denom
+	g_stf_denom = satisfied_denom
+	global true_positive
+	true_positive= tp
+	global true_recs
+	true_recs = tr
+	global g_novel
+	g_novel = novel
+	global g_satisfied
+	g_satisfied = satisfied
+	global g_novel_denom
+	g_novel_denom = novel_denom
+
+
+
+
+
+# frs()
+
 # precision = true_positive/true_recs
 # percentage_satisfied = g_satisfied/g_stf_denom
 # novelty = g_novel/g_novel_denom
-# serendipity = g_serendipitous/g_seren_denom
 
 # print("Satisfied Users: %s " %(percentage_satisfied))
 # print("Precision: %s " %(precision))
 # print("Novelty: %s " %(novelty))
-# print("Serendipity: %s" %(serendipity))
 
-# messagebox.askokcancel("Title","The application will be closed")
-# messagebox.askyesno("Title","Do you want to save?")
-# messagebox.askretrycancel("Title","Installation failed, try again?")
+
+
+
 from tkinter import *
 from tkinter.messagebox import *	
 def show_answer():
@@ -335,7 +397,7 @@ def show_answer():
 def show_friend():
     C=friend_reccomder(str(num1.get()))
     ans=frs_in_str(C)
-    print(ans)
+    #print(ans)
     blank.delete(1.0,END)
     blank.insert(1.0,str(ans))
 
@@ -343,9 +405,8 @@ def show_friend():
 main = Tk()
 
 
-Label(main, text = "Enter Num 1:").grid(row=0)
-# Label(main, text = "Enter Num 2:").grid(row=1)
-Label(main, text = "Bookmark \n Reccomendations").grid(row=2)
+Label(main, text = "Enter User ID").grid(row=0)
+Label(main, text = "Reccomendations").grid(row=2)
 
 
 num1 = Entry(main)

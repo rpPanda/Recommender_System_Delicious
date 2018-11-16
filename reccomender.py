@@ -36,10 +36,15 @@ for i in range(0,s):
 bid = {}
 for j in range(0,g.shape[0]):
     bid[g[j][1]]=i
-U = np.zeros((s,sb), dtype='int32')
-# #print(U[uid[10690]][1])
-for x in range(0,DF.shape[0]):
-    U[uid[g[x][0]]][bid[g[x][1]]]=1
+
+
+UxI = np.zeros((U.shape[0],I.shape[0]), dtype='int32')
+for x in range(0,data.shape[0]):
+    UxI[uid[index[x][0]]][bid[index[x][1]]]=1
+
+f_data=biclustering(UxI)
+
+
 
 print(U)
 pca = PCA(n_components=100)
