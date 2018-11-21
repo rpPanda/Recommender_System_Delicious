@@ -199,7 +199,7 @@ g_stf_denom = 0
 g_seren_denom = 0
 g_novel_denom = 0
 
-
+	
 
 def friend_reccomder(key1):
 	A=[]
