@@ -22,9 +22,8 @@ class User():
 		self.bookmarks = {}
 		self.friends ={}
 		self.count = 0
-
+# array of objects        
 users = {}
-
 
 def read_data():
 	for line in open('dataset/user_taggedbookmarks.dat'):
@@ -43,10 +42,7 @@ def read_data():
 
 		users[uid].bookmarks[bid] = 1
 
-
 read_data()
-
-
 
 class Bookmark():
 	id = 0
@@ -83,8 +79,9 @@ def biclustering(matrix):
 #Getting similarity between 2 bookmarks
 def book_sim(i,j):
 	if(i in bookmarks and j in bookmarks):
+        # dot product
 		intersection = len(list( (set(bookmarks[i].tags.keys()) & set(bookmarks[j].tags.keys())) ))
-	
+	    # normalization 
 		union = sqrt(len(list( (set(bookmarks[i].tags.keys())))))*len(list( (set(bookmarks[j].tags.keys()))))
 #		union =len(list( (set(bookmarks[i].tags.keys()) | set(bookmarks[j].tags.keys())) ))
 		sim=intersection/union
@@ -194,7 +191,6 @@ true_positive = 0
 true_recs = 0
 g_novel = 0
 g_satisfied = 0
-g_serendipitous = 0
 g_stf_denom = 0
 g_seren_denom = 0
 g_novel_denom = 0
@@ -212,48 +208,51 @@ def friend_reccomder(key1):
 	serendipitous = 0
 	seren_denom = 0
 	novel_denom = 0
-	if not key1 in users:
-		A.append(0)
-	
-	#for key1 in users:
-	else:
-		counter += 1
-		#print(''+str(counter)+'/'+str(total_usrs))
-		u = users[key1]
-		flag = 0
-		recom = 0
-		for key2 in users:
-			if(key1 != key2):
-				m = users[key2]
-				#sim = tag_similarity(key1,key2)
-				user_interest1 = user_interaction(key1,key2)
-				user_interest2 = user_interaction(key2,key1)
-				#print(sim)
-				if(user_interest1 > beta or user_interest2 > beta):
-					#this friend is recommended to user (key1)
-					# S.append((key1,key2))
+	beta1=beta
+	while(len(A)<2):
+		if not key1 in users:
+			A.append(0)
+		
+		#for key1 in users:
+		else:
+			counter += 1
+			#print(''+str(counter)+'/'+str(total_usrs))
+			u = users[key1]
+			flag = 0
+			recom = 0
+			for key2 in users:
+				if(key1 != key2):
+					m = users[key2]
+					#sim = tag_similarity(key1,key2)
+					user_interest1 = user_interaction(key1,key2)
+					user_interest2 = user_interaction(key2,key1)
+					#print(sim)
+					if(user_interest1 > beta1 or user_interest2 > beta1):
+						#this friend is recommended to user (key1)
+						# S.append((key1,key2))
 
-					tr += 1		#total recommendations
-					recom = 1	#current friend is recommended
-					#print("tr %s"%(tr))
-					#To check if it is a positive contact 
-					if( ( (key1,key2) in contacts ) or ( (key2,key1) in contacts)):
-						tp += 1
-						flag = 1
+						tr += 1		#total recommendations
+						recom = 1	#current friend is recommended
+						#print("tr %s"%(tr))
+						#To check if it is a positive contact 
+						if( ( (key1,key2) in contacts ) or ( (key2,key1) in contacts)):
+							tp += 1
+							flag = 1
 
-					#To check if recommended bookmarks are serendipitous 
-					for i in users[key2].bookmarks:
-						check = 1
-						for j in users[key1].bookmarks:
-							sim = book_sim(i,j)
-							if(sim>0):
-								if(not key2 in A):
-									A.append((key2))
-								check = 0
-								break
-						if(check==1):
-							serendipitous += 1
-						seren_denom += 1
+						#To check if recommended bookmarks are serendipitous 
+						for i in users[key2].bookmarks:
+							check = 1
+							for j in users[key1].bookmarks:
+								sim = book_sim(i,j)
+								if(sim>0):
+									if(not key2 in A):
+										A.append((key2))
+									check = 0
+									break
+							if(check==1):
+								serendipitous += 1
+							seren_denom += 1
+			beta1=beta1-0.01
 
 		#To check if recommended bookmarks are novel
 	return A
@@ -263,7 +262,7 @@ def friend_reccomder(key1):
 def bookmark_reccomder(key1):
 	C=[]
 	alpha1 = 0.5
-	while (not(len(C))):
+	while (len(C)<2):
 		if(not key1 in users):
 			C.append(0)
 		for key2 in users:
@@ -274,7 +273,7 @@ def bookmark_reccomder(key1):
 							if(sim>alpha1):
 								if(not i in C):
 									C.append(i)
-		alpha1-=0.1
+		alpha1-=0.05
 	
 	return C
 	
@@ -373,15 +372,15 @@ def frs():
 
 
 
-# frs()
+frs()
 
-# precision = true_positive/true_recs
-# percentage_satisfied = g_satisfied/g_stf_denom
-# novelty = g_novel/g_novel_denom
+precision = true_positive/true_recs
+percentage_satisfied = g_satisfied/g_stf_denom
+novelty = g_novel/g_novel_denom
 
-# print("Satisfied Users: %s " %(percentage_satisfied))
-# print("Precision: %s " %(precision))
-# print("Novelty: %s " %(novelty))
+print("Satisfied Users: %s " %(percentage_satisfied))
+print("Precision: %s " %(precision))
+print("Novelty: %s " %(novelty))
 
 
 
@@ -392,7 +391,9 @@ def show_answer():
     # Ans = int(num1.get()) + int(num2.get())
     C=bookmark_reccomder(str(num1.get()))
     ans=ans_in_str(C)
-    print(ans)
+    #print(ans)
+
+    Label(main, text = "Bookmark \nReccomendations").grid(row=2)
     blank.delete(1.0,END)
     blank.insert(1.0,str(ans))
 
@@ -400,6 +401,7 @@ def show_friend():
     C=friend_reccomder(str(num1.get()))
     ans=frs_in_str(C)
     #print(ans)
+    Label(main, text = "Friend \nReccomendations").grid(row=2)
     blank.delete(1.0,END)
     blank.insert(1.0,str(ans))
 
